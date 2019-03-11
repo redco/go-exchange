@@ -1,3 +1,4 @@
+//go:generate easyjson -all
 package dto
 
 import "sync"
