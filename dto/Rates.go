@@ -1,6 +1,10 @@
+//go:generate easyjson -all
 package dto
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 //easyjson:json
 type Rates struct {
@@ -20,4 +24,18 @@ func (r *Rates) Add(currency string, rate float32) {
 	r.mu.Lock()
 	r.Items[currency] = rate
 	r.mu.Unlock()
+}
+
+func (r *Rates) AddFromMap(jsonMap map[string]map[string]float32) error {
+	r.mu.Lock()
+	for currency, rate := range jsonMap {
+		var value float32
+		var ok bool
+		if value, ok = rate[r.Base]; !ok {
+			return errors.New("cannot fetch rate by base currency")
+		}
+		r.Items[currency] = 1 / value
+	}
+	r.mu.Unlock()
+	return nil
 }
