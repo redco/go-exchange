@@ -1,15 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/maZahaca/go-exchange-rates-service/pkg"
+	"github.com/maZahaca/go-exchange-rates-service/rates"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -20,16 +18,10 @@ var (
 func main() {
 	flag.Parse()
 
-	urlsChunk, err := strconv.ParseInt(getEnv("URL_CHUNKS", "3"), 10, 8)
-	if err != nil {
-		log.Fatal(err)
-	}
-	urls, err := getUrlsFromArgs(flag.Args(), urlsChunk, *baseCurrency)
-	if err != nil {
-		log.Fatal(err)
-	}
+	manager := rates.NewManager()
+	provider := rates.NewCryptoCompare(*baseCurrency, flag.Args())
+	manager.AddProvider(provider)
 
-	manager := pkg.NewRatesManager(*baseCurrency, urls)
 	manager.Update()
 
 	go func() {
@@ -42,7 +34,11 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		rawResponse, err := manager.Get().MarshalJSON()
+		pRates, err := manager.GetRates("cryptocompare")
+		if err != nil {
+			log.Fatal(err)
+		}
+		rawResponse, err := pRates.MarshalJSON()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -68,23 +64,4 @@ func getEnv(key string, defaultVal string) string {
 		return defaultVal
 	}
 	return val
-}
-
-func getUrlsFromArgs(args []string, urlsChunk int64, base string) ([]string, error) {
-	var buf bytes.Buffer
-	var urls []string
-	for i := 1; i <= len(args); i++ {
-		buf.WriteString(args[i-1])
-		if i%int(urlsChunk) == 0 || i == len(args) {
-			urls = append(
-				urls,
-				fmt.Sprintf("https://min-api.cryptocompare.com/data/pricemulti?fsyms=%s&tsyms=%s",
-					buf.String(), base),
-			)
-			buf.Reset()
-			continue
-		}
-		buf.WriteString(",")
-	}
-	return urls, nil
 }
