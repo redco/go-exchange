@@ -1,4 +1,4 @@
-# go-exchange-rates-service
+# go-exchange
 [![CircleCI (all branches)](https://img.shields.io/circleci/project/github/redco/go-exchange.svg)](https://circleci.com/gh/redco/go-exchange)
 [![Codecov](https://img.shields.io/codecov/c/github/redco/go-exchange.svg)](https://codecov.io/gh/redco/go-exchange)
 
