@@ -13,7 +13,13 @@ type Provider interface {
 	GetRates() *dto.Rates
 }
 
-func fetch(url string) (bodyBytes []byte, err error) {
+type HttpFetcher struct{}
+
+type Fetcher interface {
+	fetch(url string) ([]byte, error)
+}
+
+func (f *HttpFetcher) fetch(url string) (bodyBytes []byte, err error) {
 	log.Printf("fetching url: %s", url)
 	resp, err := http.Get(url)
 	defer func() {

@@ -11,20 +11,22 @@ import (
 const urlsChunk = 3
 
 type CryptoCompare struct {
-	slug  string
-	urls  []string
-	rates dto.Rates
+	slug    string
+	urls    []string
+	rates   dto.Rates
+	fetcher Fetcher
 }
 
-func NewCryptoCompare(base string, currencies []string) *CryptoCompare {
+func NewCryptoCompare(base string, currencies []string, fetcher Fetcher) *CryptoCompare {
 	urls, err := getUrlsFromCurrencies(base, currencies)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return &CryptoCompare{
-		slug:  "cryptocompare",
-		urls:  urls,
-		rates: *dto.NewRates(base),
+		slug:    "cryptocompare",
+		urls:    urls,
+		rates:   *dto.NewRates(base),
+		fetcher: fetcher,
 	}
 }
 
@@ -35,7 +37,7 @@ func (p *CryptoCompare) Update(ch chan<- error) {
 	for i := 0; i < urlsCount; i++ {
 		url := p.urls[i]
 		go func() {
-			bodyBytes, err := fetch(url)
+			bodyBytes, err := p.fetcher.fetch(url)
 			if err != nil {
 				done <- err
 				return

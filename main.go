@@ -18,16 +18,26 @@ var (
 func main() {
 	flag.Parse()
 
+	fetcher := new(rates.HttpFetcher)
 	manager := rates.NewManager()
-	provider := rates.NewCryptoCompare(*baseCurrency, flag.Args())
-	manager.AddProvider(provider)
+	provider := rates.NewCryptoCompare(*baseCurrency, flag.Args(), fetcher)
+	err := manager.AddProvider(provider)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	manager.Update()
+	err = manager.Update()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	go func() {
 		for {
 			time.Sleep(10 * time.Second)
-			manager.Update()
+			err = manager.Update()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}()
 
