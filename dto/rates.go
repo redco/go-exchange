@@ -3,6 +3,7 @@ package dto
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -24,6 +25,10 @@ func (r *Rates) Add(currency string, rate float32) {
 	r.mu.Lock()
 	r.Items[currency] = rate
 	r.mu.Unlock()
+}
+
+func (r *Rates) String() string {
+	return fmt.Sprintf("{ Base: %s, Items: %s }", r.Base, r.Items)
 }
 
 func (r *Rates) AddFromMap(jsonMap map[string]map[string]float32) error {
