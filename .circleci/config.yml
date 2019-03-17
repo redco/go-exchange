@@ -4,7 +4,7 @@ jobs:
     docker:
     - image: circleci/golang:1.11
       environment:
-        GO111MODULE: "ON"
+        GO111MODULE: "on"
     steps:
     - checkout
     - persist_to_workspace:
@@ -16,7 +16,7 @@ jobs:
     docker:
     - image: circleci/golang:1.11
       environment:
-        GO111MODULE: "ON"
+        GO111MODULE: "on"
     steps:
     - attach_workspace:
         at: .
@@ -46,7 +46,7 @@ jobs:
     docker:
     - image: circleci/golang:1.11
       environment:
-        GO111MODULE: "ON"
+        GO111MODULE: "on"
     steps:
     - attach_workspace:
         at: .
