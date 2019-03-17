@@ -1,0 +1,140 @@
+version: 2
+jobs:
+  checkout:
+    docker:
+    - image: circleci/golang:1.11
+      environment:
+        GO111MODULE: "ON"
+    working_directory: /usr/src/app
+    steps:
+    - checkout
+    - persist_to_workspace:
+        root: .
+        paths:
+        - .
+
+  build:
+    docker:
+    - image: circleci/golang:1.11
+      environment:
+        GO111MODULE: "ON"
+    working_directory: /usr/src/app
+    steps:
+    - attach_workspace:
+        at: .
+    - restore_cache:
+        key: dependency-cache-{{ checksum "go.sum" }}
+    - run:
+        name: Install dependencies
+        command: |
+          go get -u github.com/mailru/easyjson/easyjson
+          go mod download
+    - run:
+        name: Generate easyjson files
+        command: go generate ./dto/*
+    - run:
+        name: Build binary
+        command: CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -a -installsuffix cgo -o ./go-exchange
+    - save_cache:
+        key: dependency-cache-{{ checksum "go.sum" }}
+        paths:
+          - "/go/pkg/mod"
+    - persist_to_workspace:
+        root: .
+        paths:
+        - .
+
+  test:
+    docker:
+    - image: circleci/golang:1.11
+      environment:
+        GO111MODULE: "ON"
+    working_directory: /usr/src/app
+    steps:
+    - attach_workspace:
+        at: .
+    - run:
+        name: Run tests
+        command: go test ./rates/*
+    - run:
+        name: Run test coverage
+        command: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic
+          bash <(curl -s https://codecov.io/bash)
+
+  release-notes:
+    docker:
+    - image: circleci/node:8.12.0
+    steps:
+    - attach_workspace:
+        at: .
+    - run:
+        name: Publish release notes when build from a tag
+        command: |
+          if [[ $CIRCLE_TAG ]]; then
+            yarn global add github-release-notes
+            $(yarn global bin)/gren release
+            $(yarn global bin)/gren changelog
+          fi
+
+  publish:
+    docker:
+    - image: circleci/golang:1.11
+    steps:
+    - attach_workspace:
+        at: .
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        name: Build and push docker image
+        command: |
+          echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+          export IMAGE_NAME="redcode/go-exchange";
+          export TAG_NAME="${IMAGE_NAME}:$CIRCLE_TAG";
+          docker build -t "$TAG_NAME" .
+          docker push "$TAG_NAME"
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+    - checkout:
+        filters:
+          tags:
+            only:
+            - /v.*/
+    - build:
+        requires:
+        - checkout
+        filters:
+          tags:
+            only:
+            - /v.*/
+    - test:
+        requires:
+        - build
+        filters:
+          tags:
+            only:
+            - /v.*/
+    - release-notes:
+        requires:
+        - test
+        filters:
+          tags:
+            only:
+            - /v.*/
+          branches:
+            ignore:
+            - /.*/
+    - publish:
+        requires:
+        - test
+        - release-notes
+        filters:
+          tags:
+            only:
+            - /v.*/
+          branches:
+            ignore:
+            - /.*/
