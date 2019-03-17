@@ -53,7 +53,6 @@ func (p *CryptoCompare) Update(ch chan<- error) {
 				done <- err
 				return
 			}
-			log.Println(jsonMap)
 			log.Printf("Fetched result: %s", bodyBytes)
 			done <- nil
 		}()
