@@ -56,7 +56,7 @@ jobs:
     - run:
         name: Run test coverage
         command: |
-          go test -coverprofile=coverage.txt -covermode=count
+          go test -coverprofile=coverage.txt -covermode=count ./rates/*
           bash <(curl -s https://codecov.io/bash)
 
   release-notes:
