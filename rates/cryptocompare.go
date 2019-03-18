@@ -10,6 +10,7 @@ import (
 
 const urlsChunk = 3
 
+// CryptoCompare implements mechanism for fetching rates from CryptoCompare.com API.
 type CryptoCompare struct {
 	slug    string
 	urls    []string
@@ -17,6 +18,7 @@ type CryptoCompare struct {
 	fetcher Fetcher
 }
 
+// NewCryptoCompare returns newly created provider and provides reference for it.
 func NewCryptoCompare(base string, currencies []string, fetcher Fetcher) *CryptoCompare {
 	urls, err := getUrlsFromCurrencies(base, currencies)
 	if err != nil {
@@ -30,6 +32,8 @@ func NewCryptoCompare(base string, currencies []string, fetcher Fetcher) *Crypto
 	}
 }
 
+// Update evaluates update rates from remote provider.
+// It writes error or nil in the channel when update has been finished.
 func (p *CryptoCompare) Update(ch chan<- error) {
 	urlsCount := len(p.urls)
 	done := make(chan error, urlsCount)
@@ -37,7 +41,7 @@ func (p *CryptoCompare) Update(ch chan<- error) {
 	for i := 0; i < urlsCount; i++ {
 		url := p.urls[i]
 		go func() {
-			bodyBytes, err := p.fetcher.fetch(url)
+			bodyBytes, err := p.fetcher.Fetch(url)
 			if err != nil {
 				done <- err
 				return
@@ -68,10 +72,12 @@ func (p *CryptoCompare) Update(ch chan<- error) {
 	ch <- nil
 }
 
+// GetSlug returns string unique key of the provider.
 func (p *CryptoCompare) GetSlug() string {
 	return p.slug
 }
 
+// GetRates returns cached rates.
 func (p *CryptoCompare) GetRates() *dto.Rates {
 	return &p.rates
 }
