@@ -20,7 +20,7 @@ func NewMockFetcher(fetcher func(url string) ([]byte, error)) *MockFetcher {
 	}
 }
 
-func (mf *MockFetcher) fetch(url string) ([]byte, error) {
+func (mf *MockFetcher) Fetch(url string) ([]byte, error) {
 	return mf.fetcher(url)
 }
 
