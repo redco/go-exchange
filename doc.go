@@ -25,4 +25,4 @@ Here we create Manager and register with it CryptoCompare provider, every time
 we call Update method the rates are fetched and renewed in the memory.
 */
 
-package rates
+package main
